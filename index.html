@@ -1,0 +1,1747 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成長要素のあるスペースインベーダー</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #0d1117;
+            color: #e6edf3;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Prevent scroll bars */
+        }
+
+        #game-container {
+            background-color: #161b22;
+            border: 4px solid #30363d;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            max-width: 90vw; /* Responsive width */
+            max-height: 90vh; /* Responsive height */
+            box-sizing: border-box;
+        }
+
+        canvas {
+            background-color: #010409;
+            display: block;
+            border: 2px solid #238636;
+            border-radius: 8px;
+            touch-action: none; /* Disable default touch actions like pan and zoom */
+        }
+
+        #game-ui {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.9em;
+            color: #58a6ff;
+            text-shadow: 0 0 5px #58a6ff;
+        }
+
+        #xp-bar-container {
+            width: 150px;
+            height: 15px;
+            background-color: #30363d;
+            border: 1px solid #238636;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-left: 10px;
+        }
+
+        #xp-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #238636;
+            transition: width 0.2s ease-out;
+            border-radius: 5px;
+        }
+
+        .game-info span {
+            margin-right: 20px;
+        }
+
+        #player-hp-bar-container {
+            width: 100px;
+            height: 15px;
+            background-color: #30363d;
+            border: 1px solid #ff0000;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-left: 10px;
+        }
+
+        #player-hp-bar {
+            height: 100%;
+            width: 100%;
+            background-color: #ff0000;
+            transition: width 0.2s ease-out;
+            border-radius: 5px;
+        }
+
+        #message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.9);
+            border: 2px solid #238636;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            color: #e6edf3;
+            font-family: 'Press Start 2P', cursive;
+            z-index: 100;
+            display: none; /* Hidden by default */
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
+        }
+
+        #message-box h2 {
+            margin-top: 0;
+            color: #e6edf3;
+            text-shadow: 0 0 8px #e6edf3;
+        }
+
+        #message-box p {
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        .btn {
+            background-image: linear-gradient(#238636, #2ea043);
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            box-shadow: rgba(27, 31, 35, .04) 0 1px 0, rgba(255, 255, 255, .25) 0 1px 0 inset;
+            color: #e6edf3;
+            cursor: pointer;
+            display: inline-block;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.8em;
+            font-weight: 600;
+            line-height: 20px;
+            padding: 8px 16px;
+            position: relative;
+            text-align: center;
+            text-decoration: none;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            vertical-align: middle;
+            white-space: nowrap;
+            margin: 10px;
+        }
+
+        .btn:hover {
+            background-color: #2ea043;
+            background-image: none;
+        }
+
+        .btn:active {
+            background-color: #2ea043;
+            background-image: none;
+            box-shadow: rgba(20, 70, 32, .2) 0 1px 0 inset;
+        }
+
+        .btn:focus {
+            outline: 1px transparent;
+            box-shadow: rgba(25, 120, 50, .4) 0 0 0 3px;
+        }
+
+        .btn:disabled {
+            background-color: #272c33;
+            border-color: #2d333b;
+            color: #6d7885;
+            cursor: default;
+        }
+
+        #upgrade-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .upgrade-btn {
+            background-image: linear-gradient(#58a6ff, #3d92ff);
+            border: 1px solid #58a6ff;
+            box-shadow: rgba(27, 31, 35, .04) 0 1px 0, rgba(255, 255, 255, .25) 0 1px 0 inset;
+            color: #e6edf3;
+            padding: 12px 24px;
+            font-size: 0.9em;
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+        }
+
+        .upgrade-btn:hover {
+            background-color: #3d92ff;
+            background-image: none;
+        }
+
+        .upgrade-btn:active {
+            background-color: #3d92ff;
+            box-shadow: rgba(30, 90, 150, .2) 0 1px 0 inset;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #game-container {
+                padding: 10px;
+                width: 95vw;
+                height: 95vh;
+            }
+            canvas {
+                width: 100%;
+                height: auto; /* Allow canvas height to adjust */
+            }
+            #game-ui {
+                font-size: 0.7em;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .game-info {
+                margin-bottom: 5px;
+            }
+            #xp-bar-container, #player-hp-bar-container {
+                width: 80px;
+                margin-left: 0;
+            }
+            .btn, .upgrade-btn {
+                font-size: 0.7em;
+                padding: 6px 12px;
+            }
+            #message-box {
+                width: 80%;
+                padding: 20px;
+            }
+            #message-box h2 {
+                font-size: 1.2em;
+            }
+            #message-box p {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="game-ui">
+            <div class="game-info">スコア: <span id="score">0</span></div>
+            <div class="game-info">レベル: <span id="level">1</span></div>
+            <div class="game-info">経験値:
+                <div id="xp-bar-container">
+                    <div id="xp-bar"></div>
+                </div>
+            </div>
+            <div class="game-info">HP:
+                <div id="player-hp-bar-container">
+                    <div id="player-hp-bar"></div>
+                </div>
+            </div>
+            <div class="game-info">ステージ: <span id="stage-number">1</span></div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="message-box">
+            <h2 id="message-title">ゲーム開始</h2>
+            <p id="message-text">自機は自動で弾を発射します。矢印キーで移動。\n敵の弾と破片に注意し、自機のHPバーを確認してください！\nステージ11はボス戦です！</p>
+            <div id="upgrade-options">
+                <!-- Upgrade buttons will be inserted here -->
+            </div>
+            <button id="start-button" class="btn">ゲーム開始</button>
+            <button id="restart-button" class="btn" style="display: none;">リスタート</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score');
+        const levelDisplay = document.getElementById('level');
+        const xpBar = document.getElementById('xp-bar');
+        const playerHpBar = document.getElementById('player-hp-bar'); // プレイヤーHPバー
+        const stageNumberDisplay = document.getElementById('stage-number'); // ステージ表示
+        const messageBox = document.getElementById('message-box');
+        const messageTitle = document.getElementById('message-title');
+        const messageText = document.getElementById('message-text');
+        const upgradeOptionsDiv = document.getElementById('upgrade-options');
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+
+        // ゲーム設定
+        const GAME_WIDTH = 800;
+        const GAME_HEIGHT = 600;
+        // プレイヤーの初期設定を遅く、間隔を広くする
+        const PLAYER_SPEED_DEFAULT = 3; // 初期移動速度を遅く
+        const PLAYER_FIRE_RATE_DEFAULT = 1000; // ms // 初期発射間隔を広く (600 -> 1000)
+        const PLAYER_MAX_HP_DEFAULT = 100; // プレイヤーの初期最大HP
+        const BULLET_SPEED = 7;
+
+        // 敵の基本設定
+        const ENEMY_WIDTH_BASE = 30; // 敵の基本サイズを縮小
+        const ENEMY_HEIGHT_BASE = 25; // 敵の基本サイズを縮小
+        const ENEMY_SPACING_HORIZONTAL_BASE = 60; // 敵の横方向の間隔を広げる
+        const ENEMY_SPACING_VERTICAL_BASE = 50; // 敵の縦方向の間隔
+        const ENEMY_START_Y = 50;
+        const ENEMY_COLS_BASE = 10; // 基本の列数
+        const ENEMY_ROWS_BASE = 5; // 基本の行数
+        const ENEMY_ANIMATION_SPEED = 150; // ms per frame (アニメーション速度)
+
+        const ENEMY_SPEED_BASE = 0.5;
+        const ENEMY_MOVE_DOWN_STEP_BASE = 20; 
+        const ENEMY_DROP_CHANCE = 0.1; // アイテムドロップ率 (10%)
+        const XP_ITEM_VALUE = 20; // XPアイテムが与える経験値
+        const HP_ITEM_VALUE = 25; // HPアイテムが与えるHP回復量
+        const ENEMY_BULLET_SPEED_BASE = 4; // 敵弾の速度の基本値
+        
+        // 敵の攻撃ロジック定数を調整
+        const ENEMY_FIRE_RATE_BASE = 500; // 各敵が弾を発射できるようになるまでのクールダウン時間 (ms)
+        const ENEMY_SHOOT_CYCLE_INTERVAL_BASE = 800; // ゲームが攻撃する敵を選択する頻度 (ms)
+        
+        // 敵の数による攻撃数の調整
+        const MIN_ENEMY_SHOOTERS_DEFAULT = 3; // 通常時の各サイクルで最低限発射する敵の基本数
+        const MAX_ENEMY_SHOOTERS_DEFAULT = 5; // 通常時の各サイクルで最大限発射する敵の基本数
+        const ENEMY_SHOOTERS_10_OR_LESS_MIN = 1; // 敵が10匹以下の場合の最小発射数
+        const ENEMY_SHOOTERS_10_OR_LESS_MAX = 5; // 敵が10匹以下の場合の最大発射数
+        const ENEMY_SHOOTERS_5_OR_LESS_MIN = 1; // 敵が5匹以下の場合の最小発射数
+        const ENEMY_SHOOTERS_5_OR_LESS_MAX = 2; // 敵が5匹以下の場合の最大発射数
+
+        const SHOOTER_INCREASE_STAGE_BLOCK = 3; // 発射数が増加するステージブロック
+        const SHOOTER_INCREASE_AMOUNT = 2; // 各ブロックで増える発射数
+        const MAX_TOTAL_SHOOTERS = 15; // 発射敵の総数の上限
+
+        const ENEMY_MOVE_INTERVAL_BASE = 1000; // 敵の移動間隔の基準値 (ms)
+
+        // UFO設定
+        const UFO_WIDTH = 100;
+        const UFO_HEIGHT = 40;
+        const UFO_SPEED = 3;
+        const UFO_BASE_HP = 150; // UFOの初期HP
+        const UFO_SPAWN_STAGES = [3, 6, 9]; // UFOが出現するステージ
+        const MAX_UFO_SPAWNS_PER_GAME = 3; // ゲーム全体で出現するUFOの最大数
+        const UFO_SPAWN_DELAY_AFTER_WAVE = 5000; // ウェーブ生成からUFO出現までの遅延 (ms)
+        const UFO_RESPAWN_DELAY_AFTER_DEATH_OR_EXIT = 10000; // UFOが消滅または画面外に出てから次のUFOが出現するまでの遅延 (ms)
+
+        // 破片の定数
+        const DEBRIS_SIZE = 5;
+        const DEBRIS_SPEED = 5; 
+        const DEBRIS_DAMAGE = 10;
+
+        // ゲーム状態変数
+        let player;
+        let playerBullets = [];
+        let enemies = [];
+        let enemyBullets = []; // 敵の弾
+        let items = [];
+        let effects = []; // 敵撃破時のエフェクト用配列
+        let debris = []; // 敵撃破時の破片用配列
+        let score = 0;
+        let playerLevel = 1; // プレイヤーのレベル (XPやアップグレードに影響)
+        let currentStage = 1; // 現在のステージ数 (敵の種類や難易度に影響)
+        let xp = 0;
+        let xpToNextLevel = 100;
+        let gamePaused = true; // ゲームの一時停止状態
+        let gameOver = false;
+        let lastShotTime = 0; // プレイヤーの最後の発射時間
+        let enemyDirection = 1; // 1 = right, -1 = left
+        let enemyMoveTimer = 0;
+        let keys = {}; // 押されているキーの状態
+        let isLevelingUp = false; // レベルアップ処理中かどうかのフラグ
+        let lastEnemyShootCycleTime = 0; // 敵の発射サイクルを管理するためのタイムスタンプ
+        let lastOptionShotTime = 0; // オプション弾の発射時間
+        let animationFrameId; // requestAnimationFrameのIDを保持する変数
+
+        let ufo = null; // UFOオブジェクト
+        let ufoSpawnsLimitPerStage = 0; // How many UFOs for the current stage
+        let ufoSpawnsCurrentStage = 0; // How many UFOs spawned so far in current stage
+        let ufoSpawnedCountGlobal = 0; // Global counter for all UFOs spawned
+        let ufoSpawnCoolDown = 0; // Timer for next UFO spawn (set to delay, counts down)
+
+        let lastFrameTime = 0; // アニメーションフレーム更新用タイムスタンプ
+
+        // プレイヤーの画像 (プレースホルダーを使用)
+        const playerImage = new Image();
+        playerImage.src = 'https://placehold.co/50x50/0000FF/FFFFFF?text=P'; 
+        let playerImageLoaded = false; // プレイヤー画像が正常にロードされたかを示すフラグ
+
+        // ゲームオブジェクトクラス
+        class GameObject {
+            constructor(x, y, width, height, color) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.color = color;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+
+            // AABB衝突判定
+            collidesWith(other) {
+                return this.x < other.x + other.width &&
+                       this.x + this.width > other.x &&
+                       this.y < other.y + other.height &&
+                       this.y + this.height > other.y;
+            }
+        }
+
+        class Player extends GameObject {
+            constructor(x, y, width, height, color, image) { // 画像をコンストラクタに追加
+                super(x, y, width, height, color);
+                this.speed = PLAYER_SPEED_DEFAULT;
+                this.attack = 1; // メイン弾のダメージ
+                this.fireRate = PLAYER_FIRE_RATE_DEFAULT; // メイン弾の発射間隔 (ms)
+                this.lastShotTime = 0;
+                this.hp = PLAYER_MAX_HP_DEFAULT;
+                this.maxHp = PLAYER_MAX_HP_DEFAULT;
+                this.image = image; // プレイヤー画像
+
+                // 武器能力を個別のフラグとレベルで管理
+                this.hasAutoShoot = true; // 自動発射をデフォルトで有効にする
+                this.hasTwinCannons = false; // ツインキャノンが有効かどうか
+                this.twinCannonLevel = 0; // ツインキャノンレベル (0:なし, 1:2方向, 2:4方向, 3:6方向)
+                this.twinCannonDamageBonus = 0; // ツインキャノンの追加ダメージ
+
+                this.pierceCapacity = 0; // メイン弾の貫通能力 (0:なし, 1:1体貫通, 2:2体貫通...)
+                
+                this.hasAutoOption = false; // オプション弾が有効かどうか
+                this.optionDamageLevel = 0; // オプション弾のダメージレベル
+                this.optionFireRateLevel = 0; // オプション弾の発射間隔レベル
+                this.optionBulletDamage = 0.5; // オプション弾のダメージ
+                this.optionFireRate = 800; // オプション弾の発射間隔 (ms)
+
+                // レーザー能力
+                this.hasLaserAbility = false;
+                this.laserDamage = 10; // ダメージ/秒
+                this.laserWidth = 30; // レーザーの幅
+                this.laserFireInterval = 10000; // レーザー発射間隔 (ms)
+                this.lastLaserFireTime = 0;
+                this.isFiringLaser = false;
+                this.laserMaxDuration = 500; // レーザーの持続時間 (ms)
+                this.laserActivationTime = 0;
+            }
+
+            move(deltaX) {
+                this.x += deltaX * this.speed;
+                // 画面端の制限
+                if (this.x < 0) this.x = 0;
+                if (this.x + this.width > GAME_WIDTH) this.x = GAME_WIDTH - this.width;
+            }
+
+            // 自機を宇宙戦闘機のような見た目に描画 (画像優先、フォールバックで図形)
+            draw() {
+                if (this.image && this.image.complete && this.image.naturalWidth > 0) {
+                    ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+                } else {
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    // プレイヤーの本体をよりシャープな戦闘機型に
+                    ctx.moveTo(this.x + this.width / 2, this.y - this.height * 0.2); // 上の尖った部分
+                    ctx.lineTo(this.x + this.width, this.y + this.height); // 右下の角
+                    ctx.lineTo(this.x + this.width * 0.75, this.y + this.height * 0.8); // 右下の内側（翼の根元）
+                    ctx.lineTo(this.x + this.width * 0.25, this.y + this.height * 0.8); // 左下の内側（翼の根元）
+                    ctx.lineTo(this.x, this.y + this.height); // 左下の角
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+
+            shoot() { 
+                const currentTime = Date.now();
+                if (currentTime - this.lastShotTime > this.fireRate) {
+                    let bulletWidth = 4;
+                    let bulletHeight = 10;
+                    let bulletDamage = this.attack;
+                    let bulletColor = '#00ff00';
+                    let bulletPierceCapacity = this.pierceCapacity; // プレイヤーの貫通能力
+
+                    const baseAngle = -Math.PI / 2; // Straight up (in radians)
+
+                    // ツインキャノンが有効な場合、ツインキャノンレベルに応じて発射
+                    if (this.hasTwinCannons) {
+                        const tcDamage = bulletDamage + this.twinCannonDamageBonus; // メイン攻撃力+ツインキャノンボーナス
+                        
+                        // ツインキャノンLv.1: 左右斜め2方向
+                        if (this.twinCannonLevel >= 1) {
+                            let offset = 15; // Offset from player center
+                            let angle = (Math.PI / 180) * 20; // 20 degrees from vertical
+                            // 弾の開始位置を調整し、プレイヤーの中心から左右にオフセット
+                            playerBullets.push(new Bullet(this.x + this.width / 2 - offset, this.y + 5, bulletWidth, bulletHeight, bulletColor, tcDamage, -Math.sin(angle) * BULLET_SPEED, -Math.cos(angle) * BULLET_SPEED, bulletPierceCapacity));
+                            playerBullets.push(new Bullet(this.x + this.width / 2 + offset, this.y + 5, bulletWidth, bulletHeight, bulletColor, tcDamage, Math.sin(angle) * BULLET_SPEED, -Math.cos(angle) * BULLET_SPEED, bulletPierceCapacity));
+                        }
+                        // ツインキャノンLv.2: 4方向 (外側斜め + 内側斜め)
+                        if (this.twinCannonLevel >= 2) {
+                            let offsetOuter = 15; // External cannons
+                            let offsetInner = 5;  // Internal cannons
+                            let angleOuter = (Math.PI / 180) * 20; // 20 degrees from vertical
+                            let angleInner = (Math.PI / 180) * 10; // 10 degrees from vertical
+                            
+                            // 外側の弾
+                            playerBullets.push(new Bullet(this.x + this.width / 2 - offsetOuter, this.y + 5, bulletWidth, bulletHeight, bulletColor, tcDamage, -Math.sin(angleOuter) * BULLET_SPEED, -Math.cos(angleOuter) * BULLET_SPEED, bulletPierceCapacity));
+                            playerBullets.push(new Bullet(this.x + this.width / 2 + offsetOuter, this.y + 5, bulletWidth, bulletHeight, bulletColor, tcDamage, Math.sin(angleOuter) * BULLET_SPEED, -Math.cos(angleOuter) * BULLET_SPEED, bulletPierceCapacity));
+                            // 内側の弾
+                            playerBullets.push(new Bullet(this.x + this.width / 2 - offsetInner, this.y + 10, bulletWidth, bulletHeight, bulletColor, tcDamage, -Math.sin(angleInner) * BULLET_SPEED, -Math.cos(angleInner) * BULLET_SPEED, bulletPierceCapacity));
+                            playerBullets.push(new Bullet(this.x + this.width / 2 + offsetInner, this.y + 10, bulletWidth, bulletHeight, bulletColor, tcDamage, Math.sin(angleInner) * BULLET_SPEED, -Math.cos(angleInner) * BULLET_SPEED, bulletPierceCapacity));
+                        }
+                        // ツインキャノンLv.3: 6方向 (外側斜め + 内側斜め + わずかに斜めの真ん中寄り)
+                        if (this.twinCannonLevel >= 3) {
+                            let offsetOuter = 15; // External cannons
+                            let offsetMid = 7;    // Middle cannons
+                            let offsetInner = 0; // Center cannon (effectively)
+                            let angleOuter = (Math.PI / 180) * 20; // 20 degrees
+                            let angleMid = (Math.PI / 180) * 10;  // 10 degrees
+                            let angleInner = 0; // Straight up
+
+                            // 外側の弾
+                            playerBullets.push(new Bullet(this.x + this.width / 2 - offsetOuter, this.y + 5, bulletWidth, bulletHeight, bulletColor, tcDamage, -Math.sin(angleOuter) * BULLET_SPEED, -Math.cos(angleOuter) * BULLET_SPEED, bulletPierceCapacity));
+                            playerBullets.push(new Bullet(this.x + this.width / 2 + offsetOuter, this.y + 5, bulletWidth, bulletHeight, bulletColor, tcDamage, Math.sin(angleOuter) * BULLET_SPEED, -Math.cos(angleOuter) * BULLET_SPEED, bulletPierceCapacity));
+                            // 中間の弾
+                            playerBullets.push(new Bullet(this.x + this.width / 2 - offsetMid, this.y + 10, bulletWidth, bulletHeight, bulletColor, tcDamage, -Math.sin(angleMid) * BULLET_SPEED, -Math.cos(angleMid) * BULLET_SPEED, bulletPierceCapacity));
+                            playerBullets.push(new Bullet(this.x + this.width / 2 + offsetMid, this.y + 10, bulletWidth, bulletHeight, bulletColor, tcDamage, Math.sin(angleMid) * BULLET_SPEED, -Math.cos(angleMid) * BULLET_SPEED, bulletPierceCapacity));
+                            // 中央の弾
+                            playerBullets.push(new Bullet(this.x + this.width / 2 - offsetInner, this.y, bulletWidth, bulletHeight, bulletColor, tcDamage, 0, -BULLET_SPEED, bulletPierceCapacity)); // 中央はvyのみ
+                        }
+                    } else {
+                        // ツインキャノンが無効な場合、まっすぐのメイン弾を発射
+                        playerBullets.push(new Bullet(this.x + this.width / 2 - bulletWidth / 2, this.y, bulletWidth, bulletHeight, bulletColor, bulletDamage, 0, -BULLET_SPEED, bulletPierceCapacity));
+                    }
+                    this.lastShotTime = currentTime;
+                }
+            }
+
+            // オプション弾の発射（自動）
+            shootOption() {
+                const currentTime = Date.now();
+                // オプション弾の発射間隔
+                let optionCurrentFireRate = 800;
+                if (this.optionFireRateLevel > 0) {
+                    optionCurrentFireRate = Math.max(100, 800 - (this.optionFireRateLevel - 1) * 100);
+                }
+
+                if (currentTime - lastOptionShotTime > optionCurrentFireRate) {
+                    let optionBulletDamage = 0.5;
+                    if (this.optionDamageLevel > 0) {
+                        optionBulletDamage += (this.optionDamageLevel - 1) * 0.25; // レベルに応じてダメージ増加
+                    }
+
+                    // 最も近い敵を見つける
+                    let closestEnemy = null;
+                    let minDist = Infinity;
+                    const liveEnemies = enemies.filter(enemy => enemy.hp > 0); 
+                    if (liveEnemies.length > 0) {
+                        for (const enemy of liveEnemies) {
+                            // プレイヤーの中心から敵の中心までの距離を計算
+                            const dist = Math.hypot((enemy.x + enemy.width / 2) - (this.x + this.width / 2), (enemy.y + enemy.height / 2) - (this.y - 15));
+                            if (dist < minDist) {
+                                minDist = dist;
+                                closestEnemy = enemy;
+                            }
+                        }
+                    }
+                    // UFOが画面内にいる場合、UFOを優先的にターゲット
+                    if (ufo && ufo.hp > 0) {
+                         const distToUFO = Math.hypot((ufo.x + ufo.width / 2) - (this.x + this.width / 2), (ufo.y + ufo.height / 2) - (this.y - 15));
+                         if (closestEnemy === null || distToUFO < minDist) { // UFOが既存のClosestEnemyより近いか、ClosestEnemyがいない場合
+                             closestEnemy = ufo;
+                             minDist = distToUFO;
+                         }
+                    }
+
+                    const startX = this.x + this.width / 2;
+                    const startY = this.y - 15; // オプション弾の発射Y座標
+
+                    let vx = 0;
+                    let vy = -BULLET_SPEED; 
+                    if (closestEnemy) {
+                        const targetX = closestEnemy.x + closestEnemy.width / 2;
+                        const targetY = closestEnemy.y + closestEnemy.height / 2;
+                        const angleToEnemy = Math.atan2(targetY - startY, targetX - startX);
+                        vx = Math.cos(angleToEnemy) * BULLET_SPEED;
+                        vy = Math.sin(angleToEnemy) * BULLET_SPEED;
+                    }
+                    // オプション弾は常に単発ホーミング
+                    playerBullets.push(new Bullet(startX - 2, startY, 4, 8, '#add8e6', optionBulletDamage, vx, vy, 0));
+                    lastOptionShotTime = currentTime;
+                }
+            }
+
+            // レーザーをアクティブにする
+            activateLaser() {
+                const currentTime = performance.now();
+                if (this.hasLaserAbility && !this.isFiringLaser && currentTime - this.lastLaserFireTime > this.laserFireInterval) {
+                    this.isFiringLaser = true;
+                    this.laserActivationTime = currentTime;
+                    this.lastLaserFireTime = currentTime;
+                }
+            }
+        }
+
+        class Bullet extends GameObject {
+            constructor(x, y, width, height, color, damage, velocityX, velocityY, maxPierces = 0) {
+                super(x, y, width, height, color);
+                this.damage = damage;
+                this.velocityX = velocityX;
+                this.velocityY = velocityY;
+                this.maxPierces = maxPierces;
+                this.piercedEnemies = new Set(); // この弾が既にダメージを与えた敵を追跡
+            }
+
+            update() {
+                this.x += this.velocityX;
+                this.y += this.velocityY;
+            }
+        }
+
+        class EnemyBullet extends GameObject {
+            constructor(x, y, width, height, color, damage, velocityX, velocityY) { // velocityX, velocityYを追加
+                super(x, y, width, height, color);
+                this.damage = damage;
+                this.velocityX = velocityX;
+                this.velocityY = velocityY;
+            }
+
+            update() {
+                this.x += this.velocityX;
+                this.y += this.velocityY;
+            }
+        }
+
+        class Enemy extends GameObject {
+            constructor(x, y, width, height, color, hp, value, isDropping = false) { 
+                super(x, y, width, height, color); // colorを直接使用
+                this.hp = hp;
+                this.hp = hp;
+                this.maxHp = hp;
+                this.value = value;
+                this.lastShotTime = performance.now();
+                // 敵の個別の発射間隔を、基本値にランダムなばらつきを追加
+                // ENEMY_FIRE_RATE_BASE が 500ms なので、500ms - 600ms の間で発射クールダウンが設定される
+                this.fireRate = ENEMY_FIRE_RATE_BASE + Math.random() * 100;
+                this.isDropping = isDropping; // 落下型エイリアンかどうか
+                this.originalY = y; // 再出現時のY座標（目安）
+                this.frame = 0; // アニメーションフレーム (0 or 1)
+                this.frameTimer = 0; // フレーム切り替え用タイマー
+            }
+
+            // エイリアンらしい見た目を描画 (インベーダー風の図形 + HPバー)
+            draw() {
+                // HP割合に応じた色を計算 (赤から緑へ)
+                const hpRatio = this.hp / this.maxHp;
+                let r, g, b;
+                if (hpRatio > 0.5) {
+                    r = Math.floor(255 * (1 - hpRatio) * 2); // HPが低いほど赤が強くなる
+                    g = 255;
+                    b = 0;
+                } else {
+                    r = 255;
+                    g = Math.floor(255 * hpRatio * 2); // HPが低いほど緑が弱くなる
+                    b = 0;
+                }
+                ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+
+                // 2フレームアニメーション
+                if (this.frame === 0) {
+                    // Frame 0: Feet out
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y + this.height * 0.25);
+                    ctx.lineTo(this.x + this.width * 0.25, this.y);
+                    ctx.lineTo(this.x + this.width * 0.75, this.y);
+                    ctx.lineTo(this.x + this.width, this.y + this.height * 0.25);
+                    ctx.lineTo(this.x + this.width, this.y + this.height * 0.75);
+                    ctx.lineTo(this.x + this.width * 0.75, this.y + this.height);
+                    ctx.lineTo(this.x + this.width * 0.25, this.y + this.height);
+                    ctx.lineTo(this.x, this.y + this.height * 0.75);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Eyes
+                    ctx.fillStyle = '#ffffff'; // White eyes
+                    ctx.fillRect(this.x + this.width * 0.25, this.y + this.height * 0.25, this.width * 0.1, this.height * 0.1);
+                    ctx.fillRect(this.x + this.width * 0.65, this.y + this.height * 0.25, this.width * 0.1, this.height * 0.1);
+
+                } else {
+                    // Frame 1: Feet in
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y + this.height * 0.25);
+                    ctx.lineTo(this.x + this.width * 0.25, this.y);
+                    ctx.lineTo(this.x + this.width * 0.75, this.y);
+                    ctx.lineTo(this.x + this.width, this.y + this.height * 0.25);
+                    ctx.lineTo(this.x + this.width, this.y + this.height * 0.5);
+                    ctx.lineTo(this.x + this.width * 0.75, this.y + this.height * 0.75);
+                    ctx.lineTo(this.x + this.width * 0.25, this.y + this.height * 0.75);
+                    ctx.lineTo(this.x, this.y + this.height * 0.5);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Eyes
+                    ctx.fillStyle = '#ffffff'; // White eyes
+                    ctx.fillRect(this.x + this.width * 0.25, this.y + this.height * 0.25, this.width * 0.1, this.height * 0.1);
+                    ctx.fillRect(this.x + this.width * 0.65, this.y + this.height * 0.25, this.width * 0.1, this.height * 0.1);
+                }
+
+                // HPバーの描画
+                const hpBarWidth = this.width;
+                const hpBarHeight = 3;
+                const currentHpWidth = (this.hp / this.maxHp) * hpBarWidth;
+
+                ctx.fillStyle = '#ff0000'; // 赤色 (背景)
+                ctx.fillRect(this.x, this.y - hpBarHeight - 2, hpBarWidth, hpBarHeight); 
+                ctx.fillStyle = '#00ff00'; // 緑色 (現在HP)
+                ctx.fillRect(this.x, this.y - hpBarHeight - 2, currentHpWidth, hpBarHeight); 
+                ctx.strokeStyle = '#e6edf3';
+                ctx.strokeRect(this.x, this.y - hpBarHeight - 2, hpBarWidth, hpBarHeight); // HPバー枠
+            }
+
+            // 敵が弾を発射する
+            shoot(damage, numDirections = 1) { // ダメージと方向数をパラメータで受け取る
+                const currentTime = performance.now();
+                if (currentTime - this.lastShotTime > this.fireRate) {
+                    const baseVx = 0;
+                    const baseVy = ENEMY_BULLET_SPEED_BASE; // Positive for downward movement
+
+                    if (numDirections === 1) {
+                        enemyBullets.push(new EnemyBullet(this.x + this.width / 2 - 2, this.y + this.height, 4, 10, '#ff0000', damage, baseVx, baseVy));
+                    } else if (numDirections === 3) {
+                        // Angles relative to straight down (Math.PI / 2)
+                        let angleCenter = Math.PI / 2;
+                        let angleLeft = angleCenter + (Math.PI / 180) * 15; // 15 degrees left from center
+                        let angleRight = angleCenter - (Math.PI / 180) * 15; // 15 degrees right from center
+
+                        enemyBullets.push(new EnemyBullet(this.x + this.width / 2 - 2, this.y + this.height, 4, 10, '#ff0000', damage, Math.cos(angleCenter) * ENEMY_BULLET_SPEED_BASE, Math.sin(angleCenter) * ENEMY_BULLET_SPEED_BASE));
+                        enemyBullets.push(new EnemyBullet(this.x + this.width / 2 - 2, this.y + this.height, 4, 10, '#ff0000', damage, Math.cos(angleLeft) * ENEMY_BULLET_SPEED_BASE, Math.sin(angleLeft) * ENEMY_BULLET_SPEED_BASE));
+                        enemyBullets.push(new EnemyBullet(this.x + this.width / 2 - 2, this.y + this.height, 4, 10, '#ff0000', damage, Math.cos(angleRight) * ENEMY_BULLET_SPEED_BASE, Math.sin(angleRight) * ENEMY_BULLET_SPEED_BASE));
+                    } else if (numDirections === 4) { // 4方向
+                        let angleOffset = (Math.PI / 180) * 20; // Outer spread
+                        let angleInnerOffset = (Math.PI / 180) * 5; // Inner spread
+
+                        enemyBullets.push(new EnemyBullet(this.x + this.width / 2 - 2, this.y + this.height, 4, 10, '#ff0000', damage, Math.cos(Math.PI / 2 + angleOffset) * ENEMY_BULLET_SPEED_BASE, Math.sin(Math.PI / 2 + angleOffset) * ENEMY_BULLET_SPEED_BASE));
+                        enemyBullets.push(new EnemyBullet(this.x + this.width / 2 - 2, this.y + this.height, 4, 10, '#ff0000', damage, Math.cos(Math.PI / 2 + angleInnerOffset) * ENEMY_BULLET_SPEED_BASE, Math.sin(Math.PI / 2 + angleInnerOffset) * ENEMY_BULLET_SPEED_BASE));
+                        enemyBullets.push(new EnemyBullet(this.x + this.width / 2 - 2, this.y + this.height, 4, 10, '#ff0000', damage, Math.cos(Math.PI / 2 - angleInnerOffset) * ENEMY_BULLET_SPEED_BASE, Math.sin(Math.PI / 2 - angleInnerOffset) * ENEMY_BULLET_SPEED_BASE));
+                        enemyBullets.push(new EnemyBullet(this.x + this.width / 2 - 2, this.y + this.height, 4, 10, '#ff0000', damage, Math.cos(Math.PI / 2 - angleOffset) * ENEMY_BULLET_SPEED_BASE, Math.sin(Math.PI / 2 - angleOffset) * ENEMY_BULLET_SPEED_BASE));
+                    }
+                    this.lastShotTime = currentTime; // 発射時間を更新
+                }
+            }
+
+            // アニメーションフレームを更新
+            updateAnimation(deltaTime) {
+                this.frameTimer += deltaTime;
+                if (this.frameTimer >= ENEMY_ANIMATION_SPEED) {
+                    this.frame = 1 - this.frame; // 0と1を交互に切り替える
+                    this.frameTimer = 0;
+                }
+            }
+        }
+
+        // 新しいUFOクラス
+        class UFO extends GameObject {
+            constructor(x, y, width, height, color, hp, speed, direction) {
+                super(x, y, width, height, color);
+                this.hp = hp;
+                this.maxHp = hp;
+                this.speed = speed;
+                this.direction = direction; // 1 for right, -1 for left
+            }
+
+            draw() {
+                ctx.fillStyle = this.color; // UFOの色、例: '#8A2BE2' (blueviolet)
+                // シンプルな円盤型を描画
+                ctx.beginPath();
+                // 上部楕円 (円盤本体)
+                ctx.ellipse(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, this.height / 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 下部矩形 (キャビン)
+                ctx.fillRect(this.x + this.width * 0.2, this.y + this.height * 0.4, this.width * 0.6, this.height * 0.2);
+
+                // 下部のライト
+                ctx.fillStyle = '#ffff00'; // 黄色のライト
+                ctx.beginPath(); // パスをリセットしてライトを描画
+                ctx.arc(this.x + this.width * 0.3, this.y + this.height * 0.6, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(this.x + this.width * 0.5, this.y + this.height * 0.6, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(this.x + this.width * 0.7, this.y + this.height * 0.6, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+
+                // UFOのHPバー
+                const hpBarWidth = this.width;
+                const hpBarHeight = 5;
+                const currentHpWidth = (this.hp / this.maxHp) * hpBarWidth;
+
+                ctx.fillStyle = '#ff0000'; // 赤色 (背景)
+                ctx.fillRect(this.x, this.y - hpBarHeight - 5, hpBarWidth, hpBarHeight);
+                ctx.fillStyle = '#00ffff'; // シアン (現在HP)
+                ctx.fillRect(this.x, this.y - hpBarHeight - 5, currentHpWidth, hpBarHeight);
+                ctx.strokeStyle = '#e6edf3';
+                ctx.strokeRect(this.x, this.y - hpBarHeight - 5, hpBarWidth, hpBarHeight);
+            }
+
+            update() {
+                this.x += this.speed * this.direction;
+            }
+        }
+
+        class Item extends GameObject {
+            constructor(x, y, width, height, color, type, value) {
+                super(x, y, width, height, color);
+                this.type = type; // 'xp' or 'hp'
+                this.value = value;
+                this.speed = 2;
+            }
+
+            update() {
+                this.y += this.speed;
+            }
+        }
+
+        // 敵撃破時のエフェクトクラス
+        class ExplosionEffect extends GameObject {
+            constructor(x, y, initialWidth, initialHeight, color, duration) {
+                super(x, y, initialWidth, initialHeight, color);
+                this.life = duration; // エフェクトの持続時間
+                this.maxLife = duration;
+                this.initialX = x;
+                this.initialY = y;
+                this.baseWidth = initialWidth;
+                this.baseHeight = initialHeight;
+            }
+
+            draw() {
+                ctx.globalAlpha = this.life / this.maxLife; // 透明度を時間で変化させる
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.globalAlpha = 1.0; // 元に戻す
+            }
+
+            update() {
+                const progress = 1 - (this.life / this.maxLife); // 0 at start, 1 at end
+                const scale = 1 + progress * 2.5; // より大きく拡大 (初期サイズの3.5倍まで)
+                this.width = this.baseWidth * scale;
+                this.height = this.baseHeight * scale;
+                // 中心を維持して拡大
+                this.x = this.initialX - (this.width - this.baseWidth) / 2;
+                this.y = this.initialY - (this.height - this.baseHeight) / 2;
+
+                this.life -= 1000 / 60; // 60fpsと仮定してライフを減少
+            }
+        }
+
+        // 弾着ヒットエフェクトクラス
+        class HitEffect extends GameObject {
+            constructor(x, y, size, color, duration) {
+                super(x, y, size, size, color);
+                this.life = duration;
+                this.maxLife = duration;
+            }
+
+            draw() {
+                ctx.globalAlpha = this.life / this.maxLife;
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                ctx.globalAlpha = 1.0;
+            }
+
+            update() {
+                this.life -= 1000 / 60;
+            }
+        }
+
+
+        // 敵の破片クラス (フェードアウトしない)
+        class Debris extends GameObject {
+            constructor(x, y, size, color, speed, angle, damage) { // durationを削除
+                super(x, y, size, size, color);
+                this.speed = speed;
+                this.velocityX = Math.cos(angle) * speed;
+                this.velocityY = Math.sin(angle) * speed;
+                this.damage = damage;
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+
+            update() {
+                this.x += this.velocityX;
+                this.y += this.velocityY;
+            }
+        }
+
+        // プレイヤーレベルに応じた経験値倍率を取得する関数
+        function getXpMultiplier(level) {
+            if (level >= 1 && level <= 3) {
+                return 2.0; // レベル1〜3は経験値2倍
+            } else if (level >= 4 && level <= 6) {
+                return 1.5; // レベル4〜6は経験値1.5倍
+            } else { // レベル7以降
+                return 1.0; // レベル7以降は通常 (1倍)
+            }
+        }
+
+        // 初期化
+        function initGame() {
+            canvas.width = GAME_WIDTH;
+            canvas.height = GAME_HEIGHT;
+
+            // プレイヤーの初期化 (読み込まれた画像または色を使用)
+            player = new Player(GAME_WIDTH / 2 - 25, GAME_HEIGHT - 60, 50, 20, '#00bfff', playerImage);
+            playerBullets = [];
+            enemies = [];
+            enemyBullets = []; // 敵弾もクリア
+            items = [];
+            effects = []; // エフェクトもクリア
+            debris = []; // 破片もクリア
+            score = 0;
+            playerLevel = 1; // プレイヤーレベルを初期化
+            xp = 0;
+            xpToNextLevel = 100;
+            currentStage = 1; // ステージを初期化
+            gamePaused = true; // 初期状態ではゲームは一時停止
+            gameOver = false;
+            lastShotTime = 0;
+            enemyDirection = 1;
+            enemyMoveTimer = 0;
+            keys = {};
+            isLevelingUp = false; // レベルアップ処理中フラグをリセット
+            lastEnemyShootCycleTime = 0; // 敵の発射サイクルタイムスタンプをリセット
+            lastOptionShotTime = 0; // オプション弾の発射時間リセット
+
+            ufo = null; // UFOをリセット
+            ufoSpawnsLimitPerStage = 0;
+            ufoSpawnsCurrentStage = 0;
+            ufoSpawnedCountGlobal = 0; // Global counter reset
+            ufoSpawnCoolDown = 0;
+
+            lastFrameTime = performance.now(); // Initialize lastFrameTime for animation
+
+            updateUI();
+            
+            spawnEnemyWave(); // 敵のウェーブを生成
+
+            // メッセージボックスの表示を初期状態に設定
+            messageTitle.textContent = "ゲーム開始";
+            messageText.textContent = "自機は自動で弾を発射します。矢印キーで移動。\n敵の弾と破片に注意し、自機のHPバーを確認してください！\nステージ11はボス戦です！";
+            
+            upgradeOptionsDiv.style.display = 'none'; // アップグレードオプションは非表示
+            startButton.style.display = 'inline-block'; // 開始ボタンを表示
+            restartButton.style.display = 'none'; // リスタートボタンは非表示
+            messageBox.style.display = 'block'; // メッセージボックスを表示
+        }
+
+        // 敵のウェーブを生成
+        function spawnEnemyWave() {
+            enemies = [];
+            if (currentStage === 11) { // ステージ11はボスバトル
+                const bossHp = 500 + (currentStage - 10) * 100; // ボスのHPはステージに応じて増加
+                const bossValue = 1000;
+                const bossColor = '#dc143c'; // クリムゾン (これは描画に直接使われる色)
+                enemies.push(new Enemy(GAME_WIDTH / 2 - 75, GAME_HEIGHT / 4, 150, 100, bossColor, bossHp, bossValue, false));
+                messageText.textContent = `最終ステージ：ボス出現！ボスを倒してゲームクリアを目指せ！`;
+                return;
+            }
+
+            // ステージレベルに応じた難易度調整の乗数
+            const difficultyMultiplier = 1 + (currentStage - 1) * 0.1; // ステージ1で1.0, ステージ2で1.1, ...
+            
+            let currentEnemyRows = ENEMY_ROWS_BASE;
+            let currentEnemyCols = ENEMY_COLS_BASE;
+
+            if (currentStage >= 7) { // ステージ7以降は敵の数を増やす
+                currentEnemyRows = ENEMY_ROWS_BASE + 1; // 行を1つ増やす
+            }
+
+            const totalEnemyWidth = currentEnemyCols * ENEMY_WIDTH_BASE + (currentEnemyCols - 1) * (ENEMY_SPACING_HORIZONTAL_BASE - ENEMY_WIDTH_BASE);
+            const startX = (GAME_WIDTH - totalEnemyWidth) / 2;
+
+
+            for (let r = 0; r < currentEnemyRows; r++) {
+                for (let c = 0; c < currentEnemyCols; c++) {
+                    const x = startX + c * (ENEMY_WIDTH_BASE + ENEMY_SPACING_HORIZONTAL_BASE - ENEMY_WIDTH_BASE);
+                    const y = r * ENEMY_SPACING_VERTICAL_BASE + ENEMY_START_Y;
+                    let hp;
+                    // 上（奥）の敵ほどHPが高く、経験値も多くなるように設定
+                    // さらにステージレベルでHPを増加
+                    hp = Math.ceil((3 + (currentEnemyRows - 1 - r) * 2) * difficultyMultiplier);
+                    const value = Math.floor((10 + (currentEnemyRows - 1 - r) * 5) * difficultyMultiplier); // XPも難易度に応じて増加させる
+                    
+                    let isDroppingEnemy = false;
+                    // 最下段の敵の一部を落下型エイリアンにする (ステージ5から)
+                    if (currentStage >= 5 && r === currentEnemyRows - 1) { // 最下段の敵
+                        if (Math.random() < 0.3) { // 30%の確率で落下型にする
+                            isDroppingEnemy = true;
+                        }
+                    }
+
+                    // 敵は常に赤い四角形で描画されるため、色は固定
+                    enemies.push(new Enemy(x, y, ENEMY_WIDTH_BASE, ENEMY_HEIGHT_BASE, '#ff0000', hp, value, isDroppingEnemy)); 
+                }
+            }
+
+            // UFOの出現設定（ステージ開始時）
+            if (UFO_SPAWN_STAGES.includes(currentStage)) {
+                ufoSpawnsLimitPerStage = Math.floor(Math.random() * 2) + 2; // 各ステージで2～3回出現
+                // ゲーム全体での出現回数制限も考慮
+                if (ufoSpawnedCountGlobal + ufoSpawnsLimitPerStage > MAX_UFO_SPAWNS_PER_GAME) {
+                    ufoSpawnsLimitPerStage = MAX_UFO_SPAWNS_PER_GAME - ufoSpawnedCountGlobal;
+                }
+                if (ufoSpawnsLimitPerStage > 0) {
+                    ufoSpawnCoolDown = UFO_SPAWN_DELAY_AFTER_WAVE; // 最初のUFO出現までの遅延
+                } else {
+                    ufoSpawnCoolDown = Infinity; // 今ステージではUFOが出現しない
+                }
+                ufoSpawnsCurrentStage = 0; // 今ステージでのUFO出現数をリセット
+            } else {
+                ufoSpawnsLimitPerStage = 0;
+                ufoSpawnCoolDown = Infinity; // 今ステージではUFOが出現しない
+            }
+        }
+
+        // ゲームアップデートロジック
+        function update() {
+            // ゲームが一時停止中またはゲームオーバー状態の場合、更新処理をスキップ
+            if (gamePaused || gameOver) {
+                return;
+            }
+
+            const currentTime = performance.now();
+            const deltaTime = currentTime - lastFrameTime; // デルタタイムを計算
+            lastFrameTime = currentTime; // 最後のフレーム時間を更新
+
+            // プレイヤーの移動
+            if (keys['ArrowLeft']) {
+                player.move(-1);
+            }
+            if (keys['ArrowRight']) {
+                player.move(1);
+            }
+
+            // オプション弾は常に自動で発射 (hasAutoOptionがtrueの場合)
+            if (player.hasAutoOption) {
+                player.shootOption();
+            }
+
+            // メインの弾の発射制御
+            if (player.hasAutoShoot) { 
+                player.shoot(); // 通常のメイン弾（ツインキャノン含む）を自動発射
+            }
+
+            // レーザーの発射判定と持続
+            if (player.hasLaserAbility) {
+                player.activateLaser(); // レーザー発射の条件をチェック
+                if (player.isFiringLaser) {
+                    // レーザーの持続時間を確認
+                    if (currentTime - player.laserActivationTime > player.laserMaxDuration) {
+                        player.isFiringLaser = false; // レーザー終了
+                    } else {
+                        // レーザーと敵の衝突判定
+                        const laserRect = {
+                            x: player.x + player.width / 2 - player.laserWidth / 2,
+                            y: 0, // 画面上部から
+                            width: player.laserWidth,
+                            height: GAME_HEIGHT // 画面全体
+                        };
+
+                        for (let j = enemies.length - 1; j >= 0; j--) {
+                            const enemy = enemies[j];
+                            if (
+                                laserRect.x < enemy.x + enemy.width &&
+                                laserRect.x + laserRect.width > enemy.x &&
+                                laserRect.y < enemy.y + enemy.height && 
+                                laserRect.y + laserRect.height > enemy.y
+                            ) {
+                                enemy.hp -= player.laserDamage * (deltaTime / 1000); // デルタタイムに基づいてダメージを与える
+                                
+                                if (enemy.hp <= 0) {
+                                    score += enemy.value;
+                                    const xpMultiplier = getXpMultiplier(playerLevel); // 経験値倍率を適用
+                                    xp += enemy.value * xpMultiplier;
+                                    effects.push(new ExplosionEffect(enemy.x, enemy.y, enemy.width, enemy.height, '#ffdd00', 500));
+                                    if (currentStage >= 3) {
+                                        const debrisStartX = enemy.x + enemy.width / 2;
+                                        const debrisStartY = enemy.y + enemy.height / 2;
+                                        debris.push(new Debris(debrisStartX, debrisStartY, DEBRIS_SIZE, '#808080', DEBRIS_SPEED, Math.PI * 0.5, DEBRIS_DAMAGE));
+                                        debris.push(new Debris(debrisStartX, debrisStartY, DEBRIS_SIZE, '#808080', DEBRIS_SPEED, Math.PI * 0.5 + Math.PI / 4, DEBRIS_DAMAGE));
+                                        debris.push(new Debris(debrisStartX, debrisStartY, DEBRIS_SIZE, '#808080', DEBRIS_SPEED, Math.PI * 0.5 - Math.PI / 4, DEBRIS_DAMAGE));
+                                    }
+                                    if (Math.random() < ENEMY_DROP_CHANCE) {
+                                        if (Math.random() < 0.7) {
+                                            items.push(new Item(enemy.x + enemy.width / 2 - 5, enemy.y + enemy.height / 2 - 5, 10, 10, '#ffff00', 'xp', XP_ITEM_VALUE));
+                                        } else {
+                                            items.push(new Item(enemy.x + enemy.width / 2 - 5, enemy.y + enemy.height / 2 - 5, 10, 10, '#ff00ff', 'hp', HP_ITEM_VALUE));
+                                        }
+                                    }
+                                    enemies.splice(j, 1);
+                                }
+                            }
+                        }
+
+                         // レーザーとUFOの衝突判定
+                        if (ufo) {
+                            if (
+                                laserRect.x < ufo.x + ufo.width &&
+                                laserRect.x + laserRect.width > ufo.x &&
+                                laserRect.y < ufo.y + ufo.height &&
+                                laserRect.y + laserRect.height > ufo.y
+                            ) {
+                                ufo.hp -= player.laserDamage * (deltaTime / 1000);
+                                if (ufo.hp <= 0) {
+                                    score += 500; // UFO撃破ボーナス
+                                    levelUp(false); // UFO撃破で無条件にレベルアップ
+                                    effects.push(new ExplosionEffect(ufo.x, ufo.y, ufo.width, ufo.height, '#ff00ff', 700));
+                                    ufo = null;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            // プレイヤーの弾の更新
+            for (let i = playerBullets.length - 1; i >= 0; i--) {
+                const bullet = playerBullets[i];
+                bullet.update();
+
+                // 画面外に出たら削除
+                if (bullet.y < 0) {
+                    playerBullets.splice(i, 1);
+                    continue;
+                }
+
+                // 弾と敵の衝突判定
+                let bulletRemoved = false; // 弾がループ内で削除されたかどうかのフラグ
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
+                    if (bullet.collidesWith(enemy)) {
+                        // この弾がこの敵にまだダメージを与えていない場合のみ処理
+                        if (!bullet.piercedEnemies.has(enemy)) {
+                            enemy.hp -= bullet.damage;
+                            bullet.piercedEnemies.add(enemy); // この敵をヒットリストに追加
+                            
+                            // 弾着ヒットエフェクトを追加
+                            effects.push(new HitEffect(bullet.x, bullet.y, 8, '#ffffff', 100)); // 白い小さな閃光
+
+                            if (enemy.hp <= 0) {
+                                score += enemy.value;
+                                const xpMultiplier = getXpMultiplier(playerLevel); // 経験値倍率を適用
+                                xp += enemy.value * xpMultiplier;
+                                // 敵撃破エフェクトを追加
+                                effects.push(new ExplosionEffect(enemy.x, enemy.y, enemy.width, enemy.height, '#ffdd00', 500)); // 黄色の爆発エフェクト
+
+                                // ステージ3以降、敵が破片を落とす
+                                if (currentStage >= 3) {
+                                    // 3方向に破片を生成 (角度を広げて下まで届きやすくする)
+                                    // 破片の初期位置を敵の中心に
+                                    const debrisStartX = enemy.x + enemy.width / 2;
+                                    const debrisStartY = enemy.y + enemy.height / 2;
+
+                                    debris.push(new Debris(debrisStartX, debrisStartY, DEBRIS_SIZE, '#808080', DEBRIS_SPEED, Math.PI * 0.5, DEBRIS_DAMAGE)); // 真下
+                                    debris.push(new Debris(debrisStartX, debrisStartY, DEBRIS_SIZE, '#808080', DEBRIS_SPEED, Math.PI * 0.5 + Math.PI / 4, DEBRIS_DAMAGE)); // 右斜め下
+                                    debris.push(new Debris(debrisStartX, debrisStartY, DEBRIS_SIZE, '#808080', DEBRIS_SPEED, Math.PI * 0.5 - Math.PI / 4, DEBRIS_DAMAGE)); // 左斜め下
+                                }
+
+                                // アイテムドロップ判定（XPまたはHP）
+                                if (Math.random() < ENEMY_DROP_CHANCE) {
+                                    if (Math.random() < 0.7) { // 70% XP
+                                        items.push(new Item(enemy.x + enemy.width / 2 - 5, enemy.y + enemy.height / 2 - 5, 10, 10, '#ffff00', 'xp', XP_ITEM_VALUE));
+                                    } else { // 30% HP
+                                        items.push(new Item(enemy.x + enemy.width / 2 - 5, enemy.y + enemy.height / 2 - 5, 10, 10, '#ff00ff', 'hp', HP_ITEM_VALUE));
+                                    }
+                                }
+                                enemies.splice(j, 1);
+                            }
+
+                            // 弾を削除するかどうかの判定ロジック
+                            // piercedEnemies.size が maxPierces + 1 になると消滅 (0体貫通なら1体目ヒットで消滅, 1体貫通なら2体目ヒットで消滅)
+                            if (bullet.piercedEnemies.size > bullet.maxPierces) {
+                                playerBullets.splice(i, 1);
+                                bulletRemoved = true;
+                                break; // この弾は削除されたので、他の敵との判定は不要
+                            }
+                        }
+                    }
+                }
+                if (bulletRemoved) continue; // 弾が削除された場合は次の弾へ
+            }
+
+            // UFO出現クールダウンの更新
+            if (ufoSpawnCoolDown > 0 && ufoSpawnCoolDown !== Infinity) {
+                ufoSpawnCoolDown -= deltaTime;
+            }
+
+            // UFO生成ロジック
+            if (ufo === null && ufoSpawnsCurrentStage < ufoSpawnsLimitPerStage && ufoSpawnCoolDown <= 0) {
+                const startSide = Math.random() < 0.5 ? -1 : 1;
+                const initialX = startSide === -1 ? -UFO_WIDTH : GAME_WIDTH;
+                const ufoHp = UFO_BASE_HP + (currentStage - 1) * 20;
+                ufo = new UFO(initialX, ENEMY_START_Y - UFO_HEIGHT - 20, UFO_WIDTH, UFO_HEIGHT, '#8A2BE2', ufoHp, UFO_SPEED, startSide);
+                
+                ufoSpawnsCurrentStage++;
+                ufoSpawnedCountGlobal++; // グローバルカウンターを増やす
+
+                // 次のUFO出現までのクールダウンを設定
+                ufoSpawnCoolDown = UFO_RESPAWN_DELAY_AFTER_DEATH_OR_EXIT;
+            }
+
+            // UFOの更新と衝突判定
+            if (ufo) {
+                ufo.update();
+
+                // 画面外に出たらUFOを削除
+                if ((ufo.direction === 1 && ufo.x > GAME_WIDTH) || (ufo.direction === -1 && ufo.x + ufo.width < 0)) {
+                    ufo = null;
+                    // UFOが画面外に出た場合、次のUFO出現までのクールダウンを設定
+                    if (ufoSpawnsCurrentStage < ufoSpawnsLimitPerStage) {
+                        ufoSpawnCoolDown = UFO_RESPAWN_DELAY_AFTER_DEATH_OR_EXIT;
+                    } else {
+                        ufoSpawnCoolDown = Infinity; // 今ステージではもうUFOは出ない
+                    }
+                } else {
+                    // プレイヤーの弾とUFOの衝突判定
+                    for (let i = playerBullets.length - 1; i >= 0; i--) {
+                        const bullet = playerBullets[i];
+                        if (bullet.collidesWith(ufo)) {
+                            ufo.hp -= bullet.damage;
+                            effects.push(new HitEffect(bullet.x, bullet.y, 8, '#ffffff', 100)); // 白い小さな閃光
+
+                            playerBullets.splice(i, 1); // UFOに当たった弾は消滅
+
+                            if (ufo.hp <= 0) {
+                                score += 500; // UFO撃破ボーナス
+                                levelUp(false); // UFO撃破で無条件にレベルアップ
+                                
+                                effects.push(new ExplosionEffect(ufo.x, ufo.y, ufo.width, ufo.height, '#ff00ff', 700)); // マゼンタの大きな爆発
+                                ufo = null;
+                                // UFOが破壊された場合、次のUFO出現までのクールダウンを設定
+                                if (ufoSpawnsCurrentStage < ufoSpawnsLimitPerStage) {
+                                    ufoSpawnCoolDown = UFO_RESPAWN_DELAY_AFTER_DEATH_OR_EXIT;
+                                } else {
+                                    ufoSpawnCoolDown = Infinity; // 今ステージではもうUFOは出ない
+                                }
+                                break; // UFOが破壊されたら、このUFOに対する他の弾の処理は不要
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 敵の移動とアニメーション
+            enemyMoveTimer += deltaTime; // デルタタイムでタイマーを更新
+            // ステージレベルに応じて敵の移動間隔を短縮（より速く）
+            const currentEnemyMoveInterval = Math.max(200, ENEMY_MOVE_INTERVAL_BASE - (currentStage - 1) * 50); 
+            if (enemyMoveTimer > currentEnemyMoveInterval) {
+                enemyMoveTimer = 0;
+                let edgeReached = false;
+                for (let i = 0; i < enemies.length; i++) { // forEachから通常のforループに変更
+                    const enemy = enemies[i];
+                    enemy.x += ENEMY_SPEED_BASE * enemyDirection * 10; // より速く横移動
+                    enemy.updateAnimation(currentEnemyMoveInterval); // 移動と同時にアニメーションを更新
+                    if (enemy.x + enemy.width > GAME_WIDTH || enemy.x < 0) {
+                        edgeReached = true;
+                        // ループを中断し、全敵の移動後に方向転換するため、breakはここには不要
+                    }
+                }
+
+                if (edgeReached) {
+                    enemyDirection *= -1; // 方向転換
+                    // ステージレベルに応じて敵が下に移動する距離を調整 (現在の移動間隔の逆数に比例)
+                    const moveDownFactor = 1 + (currentStage - 1) * 0.05; 
+                    for (const enemy of enemies) {
+                        enemy.y += ENEMY_MOVE_DOWN_STEP_BASE * moveDownFactor; // 下に移動
+                    }
+                }
+            }
+
+            // --- 敵の攻撃ロジック ---
+            // ステージレベルに応じて敵の発射サイクルを短縮（より頻繁に攻撃）
+            const currentEnemyShootCycleInterval = Math.max(100, ENEMY_SHOOT_CYCLE_INTERVAL_BASE - (currentStage - 1) * 20); // 最小100msに調整
+            if (currentTime - lastEnemyShootCycleTime > currentEnemyShootCycleInterval) {
+                lastEnemyShootCycleTime = currentTime;
+
+                let currentMinShooters;
+                let currentMaxShooters;
+
+                // 敵の総数に応じて発射数を調整
+                if (enemies.length <= 5) {
+                    currentMinShooters = ENEMY_SHOOTERS_5_OR_LESS_MIN;
+                    currentMaxShooters = ENEMY_SHOOTERS_5_OR_LESS_MAX;
+                } else if (enemies.length <= 10) {
+                    currentMinShooters = ENEMY_SHOOTERS_10_OR_LESS_MIN;
+                    currentMaxShooters = ENEMY_SHOOTERS_10_OR_LESS_MAX;
+                } else {
+                    // 通常時の動的な計算
+                    let dynamicShooterBonus = Math.floor((currentStage - 1) / SHOOTER_INCREASE_STAGE_BLOCK) * SHOOTER_INCREASE_AMOUNT;
+                    currentMinShooters = MIN_ENEMY_SHOOTERS_DEFAULT + dynamicShooterBonus;
+                    currentMaxShooters = MAX_ENEMY_SHOOTERS_DEFAULT + dynamicShooterBonus;
+                }
+                
+                // 上限を設定
+                currentMaxShooters = Math.min(currentMaxShooters, MAX_TOTAL_SHOOTERS);
+                currentMinShooters = Math.min(currentMinShooters, currentMaxShooters); // minがmaxを超えないように保証
+
+                // 発射する敵の数をランダムに決定
+                const numShooters = Math.floor(Math.random() * (currentMaxShooters - currentMinShooters + 1)) + currentMinShooters;
+
+
+                // 弾を撃てる状態（個別のクールダウン中ではない）の敵をフィルタリング
+                const shootableEnemies = enemies.filter(enemy => enemy.hp > 0 && currentTime - enemy.lastShotTime > enemy.fireRate); // HPが0より大きい敵のみ対象
+
+                // 弾を撃てる敵をシャッフルし、選択された数だけ発射させる
+                const shuffledShootableEnemies = [...shootableEnemies].sort(() => 0.5 - Math.random());
+
+                // ステージレベルに応じた敵弾ダメージ
+                const enemyBulletDamage = 10 + (currentStage - 1) * 2; 
+
+                // ステージ8以降は多方向攻撃の可能性
+                let numDirectionsForEnemyBullet = 1;
+                if (currentStage >= 8) { 
+                    const rand = Math.random();
+                    if (rand < 0.2) { // 20%の確率で4方向
+                        numDirectionsForEnemyBullet = 4;
+                    } else if (rand < 0.5) { // 30%の確率で3方向
+                        numDirectionsForEnemyBullet = 3;
+                    } // 残り50%は1方向
+                }
+
+                for (let i = 0; i < Math.min(numShooters, shuffledShootableEnemies.length); i++) {
+                    shuffledShootableEnemies[i].shoot(enemyBulletDamage, numDirectionsForEnemyBullet); // 弾を発射する際にダメージと方向数を渡す
+                }
+            }
+
+            // 敵の弾の更新とプレイヤーとの衝突判定
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                const enemyBullet = enemyBullets[i];
+                enemyBullet.update();
+
+                // 画面外に出たら削除
+                if (enemyBullet.y > GAME_HEIGHT || enemyBullet.x < -10 || enemyBullet.x > GAME_WIDTH + 10) {
+                    enemyBullets.splice(i, 1);
+                    continue;
+                }
+
+                // 敵弾とプレイヤーの衝突判定
+                if (enemyBullet.collidesWith(player)) {
+                    player.hp -= enemyBullet.damage;
+                    enemyBullets.splice(i, 1); // 敵弾は衝突したら削除
+
+                    if (player.hp <= 0) {
+                        gameOver = true;
+                        gamePaused = true;
+                        showMessage('ゲームオーバー', '自機が破壊されました！');
+                        restartButton.style.display = 'inline-block';
+                        startButton.style.display = 'none';
+                        break;
+                    }
+                }
+            }
+
+            // アイテムの更新
+            for (let i = items.length - 1; i >= 0; i--) {
+                const item = items[i];
+                item.update();
+
+                // 画面外に出たら削除
+                if (item.y > GAME_HEIGHT) {
+                    items.splice(i, 1);
+                    continue;
+                }
+
+                // アイテムとプレイヤーの衝突判定
+                if (item.collidesWith(player)) {
+                    if (item.type === 'xp') {
+                        const xpMultiplier = getXpMultiplier(playerLevel); // 経験値倍率を適用
+                        xp += item.value * xpMultiplier;
+                    } else if (item.type === 'hp') {
+                        player.hp = Math.min(player.maxHp, player.hp + item.value); // HPを回復、最大HPを超えない
+                    }
+                    items.splice(i, 1);
+                }
+            }
+
+            // エフェクトの更新
+            for (let i = effects.length - 1; i >= 0; i--) {
+                const effect = effects[i];
+                effect.update();
+                if (effect.life <= 0) {
+                    effects.splice(i, 1);
+                }
+            }
+
+            // 破片の更新とプレイヤーとの衝突判定
+            for (let i = debris.length - 1; i >= 0; i--) {
+                const particle = debris[i];
+                particle.update();
+
+                // 画面外に出たら削除（ライフではなく画面外に出たかのみ）
+                if (particle.y > GAME_HEIGHT + particle.height || particle.x < -particle.width || particle.x > GAME_WIDTH + particle.width) {
+                    debris.splice(i, 1);
+                    continue;
+                }
+
+                // 破片とプレイヤーの衝突判定
+                if (particle.collidesWith(player)) {
+                    player.hp -= particle.damage;
+                    debris.splice(i, 1); // 破片は衝突したら削除
+
+                    if (player.hp <= 0) {
+                        gameOver = true;
+                        gamePaused = true;
+                        showMessage('ゲームオーバー', '自機が破壊されました！');
+                        restartButton.style.display = 'inline-block';
+                        startButton.style.display = 'none';
+                        break;
+                    }
+                }
+            }
+
+
+            // ゲームオーバー判定 (敵が防衛ラインを突破) および落下型エイリアンの処理
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                if (enemy.y + enemy.height > GAME_HEIGHT - player.height - 20) { // プレイヤーより手前まで来たら
+                    if (enemy.isDropping && enemy.y + enemy.height > GAME_HEIGHT) { // 落下型エイリアンが画面下端を超えたら再出現
+                        enemy.y = ENEMY_START_Y; // 元の位置（上部）に戻す
+                        enemy.x = GAME_WIDTH * Math.random(); // X座標はランダムにするか、元の列に戻すか
+                        // enemy.x = enemy.originalX; // もし元の列に戻したいなら
+                        // 敵のlastShotTimeもリセットして、すぐに攻撃しないようにする
+                        enemy.lastShotTime = performance.now();
+                    } else if (!enemy.isDropping) { // 落下型でないエイリアンが防衛ラインを突破
+                        gameOver = true;
+                        gamePaused = true;
+                        showMessage('ゲームオーバー', '敵が防衛ラインを突破しました！');
+                        restartButton.style.display = 'inline-block';
+                        startButton.style.display = 'none';
+                        break;
+                    }
+                }
+            }
+            // ゲームクリア判定 (ステージ11のボスを倒した時)
+            if (currentStage === 11 && enemies.length === 0 && !isLevelingUp) {
+                gameOver = true;
+                gamePaused = true;
+                showMessage('ゲームクリア！', 'すべての敵を打ち破りました！おめでとうございます！');
+                restartButton.style.display = 'inline-block';
+                startButton.style.display = 'none';
+            }
+
+
+            // 敵が全滅したらステージとレベルアップをトリガー
+            if (enemies.length === 0 && !isLevelingUp && currentStage !== 11) { // ボス戦以外
+                currentStage++; // ステージを進める
+                // ステージクリア時の追加報酬（例: HP回復）
+                player.hp = Math.min(player.maxHp, player.hp + 25); // HPを25回復
+
+                // ステージクリアによるプレイヤーレベルアップ
+                xp += xpToNextLevel * 0.5; // 次のレベルに必要なXPの半分を報酬として加算（これは固定ボーナスのため倍率を適用しない）
+                // Stage clear always triggers a player level up choice
+                levelUp(true); // ウェーブクリアによってレベルアップ（アップグレード選択肢を出す）
+            }
+
+            // XPによるプレイヤーレベルアップ判定 (敵が残っている場合も可能)
+            if (xp >= xpToNextLevel && !isLevelingUp && currentStage !== 11) { // ボス戦以外
+                if (enemies.length > 0) { // 敵が残っている場合のみXPによるレベルアップを許可
+                    levelUp(false); // XPによってレベルアップ（アップグレード選択肢を出す）
+                }
+            }
+
+            updateUI();
+        }
+
+        // UIの更新
+        function updateUI() {
+            scoreDisplay.textContent = score;
+            levelDisplay.textContent = playerLevel; // プレイヤーレベルを表示
+            xpBar.style.width = (xp / xpToNextLevel) * 100 + '%';
+            playerHpBar.style.width = (player.hp / player.maxHp) * 100 + '%'; // プレイヤーHPバー更新
+            stageNumberDisplay.textContent = currentStage; // ステージ表示を更新
+        }
+
+        // 描画ロジック
+        function draw() {
+            ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT); // キャンバスをクリア
+
+            player.draw(); // プレイヤーを描画
+
+            playerBullets.forEach(bullet => bullet.draw()); // プレイヤー弾を描画
+            enemies.forEach(enemy => enemy.draw()); // 敵を描画 (今はインベーダー風の図形)
+            enemyBullets.forEach(bullet => bullet.draw()); // 敵弾を描画
+            items.forEach(item => item.draw()); // アイテムを描画
+            effects.forEach(effect => effect.draw()); // エフェクトを描画
+            debris.forEach(particle => particle.draw()); // 破片を描画
+
+            if (ufo) { // UFOが存在すれば描画
+                ufo.draw();
+            }
+
+            // レーザーが発射中の場合
+            if (player.isFiringLaser) {
+                const laserRectX = player.x + player.width / 2 - player.laserWidth / 2;
+                const laserRectY = 0; // 画面上部から
+                ctx.fillStyle = `rgba(0, 255, 255, ${Math.min(1, (performance.now() - player.laserActivationTime) / player.laserMaxDuration * 2)})`; // 時間で透明度を調整
+                ctx.fillRect(laserRectX, laserRectY, player.laserWidth, GAME_HEIGHT);
+            }
+        }
+
+        // ゲームループ
+        function gameLoop(timestamp) {
+            // requestAnimationFrameの重複を防ぐため、既にリクエスト済みの場合はキャンセル
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            // デルタタイムを渡してupdate関数を呼び出す
+            update(); // timestampはupdate内でcurrentTimeとの差分計算に使用
+            draw();   // 更新された状態を描画
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        // メッセージボックスを表示
+        function showMessage(title, text) {
+            messageTitle.textContent = title;
+            messageText.textContent = text;
+            upgradeOptionsDiv.style.display = 'none'; // 通常メッセージ時はアップグレードオプションを非表示
+            startButton.style.display = 'none'; // 通常メッセージ時はスタートボタンを非表示
+            restartButton.style.display = 'none'; // リスタートボタンもデフォルト非表示
+            if (gameOver) { // ゲームオーバー時のみリスタートボタンを表示
+                restartButton.style.display = 'inline-block';
+            }
+            messageBox.style.display = 'block';
+        }
+
+        // レベルアップ処理
+        function levelUp(triggeredByWaveClearParam = false) {
+            if (gameOver || isLevelingUp) { // ゲームオーバー中または既にレベルアップ処理中の場合は何もしない
+                return;
+            }
+
+            isLevelingUp = true; // レベルアップ処理を開始
+            gamePaused = true; // ゲームを一時停止
+
+            // ボス戦クリア後はレベルアップしない
+            if (currentStage === 11 && enemies.length === 0) { // ステージクリアの条件をcurrentStageで判定
+                gameOver = true; // ゲームクリア
+                showMessage('ゲームクリア！', 'すべての敵を打ち破りました！おめでとうございます！');
+                restartButton.style.display = 'inline-block';
+                return;
+            }
+
+
+            playerLevel++; // プレイヤーレベルを進める
+            xp -= xpToNextLevel; // 消費した経験値を引く
+            xpToNextLevel = Math.floor(xpToNextLevel * 1.5); // 次のレベルに必要な経験値を増やす
+
+            updateUI(); // UIを更新
+
+            messageTitle.textContent = `レベルアップ！ (レベル ${playerLevel})`;
+            messageText.textContent = '3つの候補からアップグレードを選択してください。';
+            upgradeOptionsDiv.innerHTML = ''; // オプションをクリア
+            upgradeOptionsDiv.style.display = 'flex'; // アップグレードオプションを表示
+
+            const availableUpgrades = [
+                { name: '攻撃力アップ', effect: () => { player.attack += 0.5; }, desc: `メイン弾のダメージが${player.attack.toFixed(1)}から${(player.attack + 0.5).toFixed(1)}に増加` },
+                { name: '発射速度アップ', effect: () => player.fireRate = Math.max(50, player.fireRate - 50), desc: `メイン弾の発射間隔が${player.fireRate}msから${Math.max(50, player.fireRate - 50)}msに短縮` },
+                { name: '移動速度アップ', effect: () => player.speed += 0.5, desc: `自機の移動速度が${player.speed.toFixed(1)}から${(player.speed + 0.5).toFixed(1)}に増加` },
+                { name: 'HP増加', effect: () => { player.maxHp += 25; player.hp = Math.min(player.maxHp, player.hp + 25); }, desc: `最大HPが25増加し、HPも回復` },
+            ];
+
+            // ツインキャノンのアップグレードロジック
+            if (!player.hasTwinCannons) {
+                availableUpgrades.push({ name: 'ツインキャノン追加', effect: () => { player.hasTwinCannons = true; player.twinCannonLevel = 1; }, desc: 'メイン発射が左右斜め2方向になる' });
+            } else if (player.twinCannonLevel < 3) { // 最大3レベルまで
+                let nextTwinCannonDesc = '';
+                if (player.twinCannonLevel === 1) nextTwinCannonDesc = '4方向';
+                if (player.twinCannonLevel === 2) nextTwinCannonDesc = '6方向';
+                availableUpgrades.push({ name: 'ツインキャノン強化', effect: () => { player.twinCannonLevel++; player.twinCannonDamageBonus += 0.5; }, desc: `ツインキャノンが${nextTwinCannonDesc}になり、ダメージも強化 (Lv.${player.twinCannonLevel + 1})` });
+            }
+
+            // 貫通弾のアップグレードロジック
+            if (player.pierceCapacity === 0) { // まだ貫通能力がない場合
+                availableUpgrades.push({ name: '貫通弾追加', effect: () => { player.pierceCapacity = 1; }, desc: 'メイン発射が敵を1体貫通するようになる (2体目にあたると消滅)' });
+            } else {
+                availableUpgrades.push({ name: '貫通弾強化', effect: () => { player.pierceCapacity += 1; }, desc: `メイン発射の貫通できる敵の数が${player.pierceCapacity}体から${player.pierceCapacity + 1}体に増加` });
+            }
+
+            // オプションアップグレードの追加 (弾数増加なし、攻撃力と発射速度のみ)
+            if (!player.hasAutoOption) {
+                availableUpgrades.push({ name: 'オプション追加', effect: () => { 
+                    player.hasAutoOption = true; 
+                    player.optionDamageLevel = 1; 
+                    player.optionFireRateLevel = 1; 
+                }, desc: '自機が自動でオプション弾を発射するようになる (ダメージ0.5)' });
+            } else {
+                // オプション攻撃力アップ
+                availableUpgrades.push({ name: 'オプション攻撃力強化', effect: () => { player.optionDamageLevel++; player.optionBulletDamage += 0.25; }, desc: `オプション弾のダメージが${player.optionBulletDamage.toFixed(2)}から${(player.optionBulletDamage + 0.25).toFixed(2)}に増加 (Lv.${player.optionDamageLevel + 1})` });
+                // オプション発射速度アップ
+                availableUpgrades.push({ name: 'オプション発射速度強化', effect: () => { player.optionFireRateLevel++; player.optionFireRate = Math.max(100, player.optionFireRate - 100); }, desc: `オプション弾の発射間隔が${player.optionFireRate}msから${Math.max(100, player.optionFireRate - 100)}msに短縮 (Lv.${player.optionFireRateLevel + 1})` });
+            }
+
+            // レーザーのアップグレードロジック
+            if (!player.hasLaserAbility) {
+                availableUpgrades.push({ name: 'レーザー攻撃追加', effect: () => { player.hasLaserAbility = true; }, desc: '自動で強力なレーザーを定期的に発射するようになる' });
+            } else {
+                availableUpgrades.push({ name: 'レーザー攻撃強化', effect: () => { 
+                    player.laserDamage += 5; 
+                    player.laserFireInterval = Math.max(5000, player.laserFireInterval - 1000); 
+                }, desc: `レーザーダメージ増加、発射間隔短縮 (${(player.laserFireInterval / 1000).toFixed(0)}秒から${(Math.max(5000, player.laserFireInterval - 1000) / 1000).toFixed(0)}秒)` });
+            }
+
+
+            // ランダムに3つ選ぶ（重複なし）
+            const chosenUpgrades = [];
+            const availableUpgradesCopy = [...availableUpgrades];
+            while (chosenUpgrades.length < 3 && availableUpgradesCopy.length > 0) {
+                const randomIndex = Math.floor(Math.random() * availableUpgradesCopy.length);
+                chosenUpgrades.push(availableUpgradesCopy.splice(randomIndex, 1)[0]);
+            }
+
+            chosenUpgrades.forEach(upgrade => {
+                const button = document.createElement('button');
+                button.classList.add('btn', 'upgrade-btn');
+                button.innerHTML = `<h3>${upgrade.name}</h3><p>${upgrade.desc}</p>`;
+                button.onclick = () => {
+                    upgrade.effect(); // アップグレード効果を適用
+                    hideMessage();    // メッセージボックスを非表示
+                    gamePaused = false; // ゲームを再開
+                    isLevelingUp = false; // レベルアップ処理を終了
+
+                    // ウェーブクリアによってレベルアップがトリガーされた場合、次のウェーブを生成
+                    if (triggeredByWaveClearParam) {
+                        spawnEnemyWave();
+                    }
+                };
+                upgradeOptionsDiv.appendChild(button);
+            });
+
+            startButton.style.display = 'none'; // スタートボタンは非表示
+            restartButton.style.display = 'none'; // リスタートボタンは非表示
+
+            // DOMの描画サイクルを考慮し、わずかな遅延を置いてメッセージボックスを表示
+            setTimeout(() => {
+                messageBox.style.display = 'block';
+            }, 50); // 50ミリ秒の遅延
+        }
+
+        // メッセージボックスを非表示
+        function hideMessage() {
+            messageBox.style.display = 'none';
+        }
+
+        // イベントリスナー
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            // スペースキーが押されたときにスクロールを防止
+            if (e.key === ' ') {
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // タッチイベントリスナー (モバイル対応)
+        let touchStartX = 0;
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // デフォルトのスクロールやズームを防止
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const deltaX = touch.clientX - touchStartX;
+            player.move(deltaX / 10); // タッチの移動量に応じてプレイヤーを移動
+            touchStartX = touch.clientX; // 開始位置を更新して連続的な移動を可能にする
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            // 特に何もしない（自動射撃のため）
+        });
+
+
+        startButton.addEventListener('click', () => {
+            hideMessage();
+            gamePaused = false;
+        });
+
+        restartButton.addEventListener('click', () => {
+            initGame();
+        });
+
+
+        // ウィンドウのリサイズ対応
+        function resizeGame() {
+            const container = document.getElementById('game-container');
+            const aspectRatio = GAME_WIDTH / GAME_HEIGHT;
+            let newWidth = window.innerWidth * 0.9;
+            let newHeight = window.innerHeight * 0.8;
+
+            if (newWidth / aspectRatio > newHeight) {
+                newWidth = newHeight * aspectRatio;
+            } else {
+                newHeight = newWidth / aspectRatio;
+            }
+
+            canvas.style.width = `${newWidth}px`;
+            canvas.style.height = `${newHeight}px`;
+        }
+
+        // ページロード時の初期化
+        window.onload = function() {
+            // プレイヤー画像のロード処理 (ここだけ画像を読み込もうとします)
+            playerImage.onload = () => { 
+                playerImageLoaded = true; // 画像が正常にロードされたことを示すフラグを立てる
+                initGame(); // 画像ロード後にゲームを初期化
+                resizeGame(); // リサイズ処理を実行
+                gameLoop(); // ゲームループを開始
+            };
+            playerImage.onerror = () => {
+                console.error("Failed to load player image. Using fallback graphics.");
+                playerImageLoaded = false; // 画像ロード失敗のフラグを立てる
+                initGame(); // 画像ロード失敗時もゲームを初期化（フォールバック描画）
+                resizeGame(); // リサイズ処理を実行
+                gameLoop(); // ゲームループを開始
+            };
+
+            // 画像が既にキャッシュされているなどで `onload` が発火しない場合に備え、
+            // `complete` プロパティと `naturalWidth` をチェックして手動で処理をトリガーする
+            if (playerImage.complete && playerImage.naturalWidth > 0) {
+                playerImageLoaded = true; // キャッシュから読み込まれた場合もフラグを立てる
+                playerImage.onload(); // onloadハンドラを明示的に呼び出す
+            } else {
+                // 画像がロード中、またはまだ開始されていない場合も、initGameとgameLoopを開始
+                // これにより、画像がロードされなくてもゲームはすぐに始まる
+                initGame();
+                resizeGame();
+                gameLoop();
+            }
+        };
+
+        window.addEventListener('resize', resizeGame);
+
+    </script>
+</body>
+</html>
